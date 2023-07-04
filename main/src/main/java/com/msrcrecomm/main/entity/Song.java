@@ -8,7 +8,7 @@ public class Song {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "song_id")
-    private Integer key;
+    private String id;
 
     @Column(name = "song_name")
     private String name;
@@ -16,15 +16,18 @@ public class Song {
     @Column(name="artist_name")
     private String artistName;
 
-    @Column(name="year")
-    private String year;
+    @Column(name="url")
+    private String url;
 
-    public Integer getKey() {
-        return key;
+    @Column(name="album_name")
+    private String albumName;
+
+    public String getKey() {
+        return id;
     }
 
-    public void setKey(Integer key) {
-        this.key = key;
+    public void setKey(String id) {
+        this.id = id;
     }
 
     public String getName() {
@@ -43,11 +46,19 @@ public class Song {
         this.artistName = artistName;
     }
 
-    public String getYear() {
-        return year;
+    public String getUrl() {
+        return url;
     }
 
-    public void setYear(String year) {
-        this.year = year;
+    public void setUrl(String url) {
+        this.url = url;
+    }
+
+    public String getAlbumName() {
+        return albumName;
+    }
+
+    public void setAlbumName(String albumName) {
+        this.albumName = albumName;
     }
 }
