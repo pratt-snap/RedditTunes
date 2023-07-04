@@ -177,8 +177,7 @@ public class OpenAICallsService {
         String clientId = "0a66b96585504078872c6227c7563373";
         String clientSecret = "4ed907ccb2d842ab938e995eaeac3566";
         URI redirectUri = SpotifyHttpManager.makeUri("http://localhost:8080/callback");
-        String code = "AQBb3XH50I9ElGv4NF6pfJr6OHbF_tycZN16i0w6n8LuHuO2EL7y_Ytt8gq_b05fJD0ix_6AMhPgBpmzeTqUKKinHFlmja_j7JxrAPoKRasWDxBvOyNgVMoUgpTwX_Hcn4U1nJSWHSlNnmr93dVSuge-r06Snw7Uz9IxT_oRPGTzJQ";
-//        String code=kode;
+        String code=kode;
         SpotifyApi spotifyApi = new SpotifyApi.Builder()
                 .setClientId(clientId)
                 .setClientSecret(clientSecret)
