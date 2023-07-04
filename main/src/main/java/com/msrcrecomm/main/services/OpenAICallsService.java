@@ -1,10 +1,22 @@
 package com.msrcrecomm.main.services;
 
+import com.msrcrecomm.main.entity.Song;
+import org.apache.hc.core5.http.ParseException;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
+import se.michaelthelin.spotify.SpotifyApi;
+import se.michaelthelin.spotify.SpotifyHttpManager;
+import se.michaelthelin.spotify.exceptions.SpotifyWebApiException;
+import se.michaelthelin.spotify.model_objects.credentials.AuthorizationCodeCredentials;
+import se.michaelthelin.spotify.model_objects.specification.Track;
+import se.michaelthelin.spotify.requests.authorization.authorization_code.AuthorizationCodeRequest;
+import se.michaelthelin.spotify.requests.data.search.simplified.SearchTracksRequest;
+
+import java.io.IOException;
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -38,7 +50,7 @@ public class OpenAICallsService {
                 "emotion: Humor\n" +
                 "target_audience: Anime/Manga fans";
         // will have to get it from database eventually
-        String userPrompt="";
+        String userPrompt="“I Think You Should Leave” on Netflix";
         messages.add(createMessage("system", systemPrompt));
         messages.add(createMessage("user", userPrompt));
         String requestBody = "{\"messages\": " + messages.toString() + ", \"max_tokens\": 300, \"model\": \"gpt-3.5-turbo\"}";
@@ -76,7 +88,9 @@ public class OpenAICallsService {
         Boolean languageNotEnglish=checkLanguage(userPrompt);
         Integer n=5;
         n=languageNotEnglish?10:5;
-        String systemPrompt="You are a music recommendation system who returns just" + n + "song names as response for people of described traits without courtesy message";
+        String systemPrompt="You are a music recommendation system who returns just" + n + "song and corresponding artist name as response for people of described traits without courtesy message. example of response \n" +
+                "Song Name 1 - name of artist \n" +
+                "Song Name 2 - name of artist \n";
         messages.add(createMessage("system", systemPrompt));
         messages.add(createMessage("user", userPrompt));
 
@@ -96,18 +110,29 @@ public class OpenAICallsService {
         System.out.println("Response status code: " + statusCode);
         JSONArray choicesArray = responseJson.getJSONArray("choices");
         String content="";
+        List<Song> songs=new ArrayList<>();
         if (choicesArray.length() > 0) {
             JSONObject firstChoice = choicesArray.getJSONObject(0);
             JSONObject message = firstChoice.getJSONObject("message");
             content = message.getString("content");
-
-            //String[] result=processContent(content);
-
+            songs=CreateSongsArray(content);
             System.out.println("Response content: " + content);
         } else {
             System.out.println("No choices found in the response.");
         }
         return content;
+    }
+
+    private List<Song> CreateSongsArray(String content) {
+        List<Song> songs=new ArrayList<>();
+        String[] arr= content.split("\n");
+        StringBuilder str=new StringBuilder();
+        for(String line:arr){
+            Song song=SearchSong(line);
+            songs.add(song);
+        }
+        System.out.println(str);
+        return songs;
     }
 
     private Boolean checkLanguage(String userPrompt) {
@@ -148,82 +173,55 @@ public class OpenAICallsService {
         return jsonObject;
     }
 
-//    public SpotifyApi getAccessToken(){
-//        String clientId = "";
-//        String clientSecret = "";
-//        URI redirectUri = SpotifyHttpManager.makeUri("http://localhost:3000");
-//        String code = "";
-//
-//        SpotifyApi spotifyApi = new SpotifyApi.Builder()
-//                .setClientId(clientId)
-//                .setClientSecret(clientSecret)
-//                .setRedirectUri(redirectUri)
-//                .build();
-//        AuthorizationCodeRequest authorizationCodeRequest = spotifyApi.authorizationCode(code)
-//                .build();
-//            try {
-//                final AuthorizationCodeCredentials authorizationCodeCredentials = authorizationCodeRequest.execute();
-//
-//                // Set access and refresh token for further "spotifyApi" object usage
-//                spotifyApi.setAccessToken(authorizationCodeCredentials.getAccessToken());
-//                spotifyApi.setRefreshToken(authorizationCodeCredentials.getRefreshToken());
-//
-//                System.out.println("Expires in: " + authorizationCodeCredentials.getExpiresIn());
-//            } catch (IOException | SpotifyWebApiException | ParseException e) {
-//                System.out.println("Error: " + e.getMessage());
-//            }
-//            return spotifyApi;
-//        }
-//
-//    public String getAuthorizationCode() {
-//
-//        String CLIENT_ID = "";
-//        String REDIRECT_URI = "http://:3000";
-//        String AUTH_ENDPOINT = "https://accounts.spotify.com/authorize";
-//        String SCOPES = "user-read-private user-read-email"; // Specify required scopes
-//        return null;
-//    }
+    public SpotifyApi getAccessToken(String kode){
+        String clientId = "0a66b96585504078872c6227c7563373";
+        String clientSecret = "4ed907ccb2d842ab938e995eaeac3566";
+        URI redirectUri = SpotifyHttpManager.makeUri("http://localhost:8080/callback");
+        String code = "AQBb3XH50I9ElGv4NF6pfJr6OHbF_tycZN16i0w6n8LuHuO2EL7y_Ytt8gq_b05fJD0ix_6AMhPgBpmzeTqUKKinHFlmja_j7JxrAPoKRasWDxBvOyNgVMoUgpTwX_Hcn4U1nJSWHSlNnmr93dVSuge-r06Snw7Uz9IxT_oRPGTzJQ";
+//        String code=kode;
+        SpotifyApi spotifyApi = new SpotifyApi.Builder()
+                .setClientId(clientId)
+                .setClientSecret(clientSecret)
+                .setRedirectUri(redirectUri)
+                .build();
+        AuthorizationCodeRequest authorizationCodeRequest = spotifyApi.authorizationCode(code)
+                .build();
+            try {
+                final AuthorizationCodeCredentials authorizationCodeCredentials = authorizationCodeRequest.execute();
 
+                // Set access and refresh token for further "spotifyApi" object usage
+                spotifyApi.setAccessToken(authorizationCodeCredentials.getAccessToken());
+                spotifyApi.setRefreshToken(authorizationCodeCredentials.getRefreshToken());
 
+                System.out.println("Expires in: " + spotifyApi.getAccessToken());
+                System.out.println("Expires in: " + authorizationCodeCredentials.getExpiresIn());
+            } catch (IOException | SpotifyWebApiException|ParseException e) {
+                System.out.println("Error: " + e.getMessage());
+            }
+        return spotifyApi;
+        }
 
-//    public String SearchSong(String searchQuery) {
-////        String clientId = "";
-////        String clientSecret = "";
-//
-//         SpotifyApi spotifyApi = new SpotifyApi.Builder()
-//                .setAccessToken(accessToken)
-//                .build();
-//        SearchTracksRequest searchTracksRequest = spotifyApi.searchTracks(searchQuery).build();
-//          .market(CountryCode.SE)
-//          .limit(10)
-//          .offset(0)
-//          .includeExternal("audio")
-//
-//        SpotifyApi spotifyApi = new SpotifyApi.Builder()
-//                .setClientId(clientId)
-//                .setClientSecret(clientSecret)
-//                .build();
+    public Song SearchSong(String searchQuery) {
+        String clientId = "0a66b96585504078872c6227c7563373";
+        String clientSecret = "4ed907ccb2d842ab938e995eaeac3566";
+        String accessToken="BQDb5T34KQyc3Jw1bP05Zgnp46u0BADAOyer9x_fBPvZsaUjZa4YueolKBLOfXiSvf3Ab5Nrka8WgSV1-wOjbJfelJXPTvaDHhx-oVftQmVo52IxlQzAZxr1GYQ5jLN9XwMUFC40HfKp2pIjJIFSDza5mbLRm5KrBvBPrFoo2rVzeotr0DVD_dFHxP6_aMA6UVO75tqPaQ";
 
-//        // Set up the search request
-//        SearchTracksRequest searchTracksRequest = spotifyApi.searchTracks(searchQuery)
-//                .limit(5) // Set the number of results to return (optional)
-//                .build();
-//
-//        try {
-//            // Execute the search request
-//            Track[] tracks = searchTracksRequest.execute().getItems();
-//
-//            // Process the search results
-//            for (Track track : tracks) {
-//                System.out.println("Track Name: " + track.getName());
-//                System.out.println("Artist(s): " + track.getArtists()[0].getName());
-//                System.out.println("Album: " + track.getAlbum().getName());
-//                System.out.println("Preview URL: " + track.getPreviewUrl());
-//                System.out.println("----------------------");
-//            }
-//        } catch (ParseException | IOException | SpotifyWebApiException e) {
-//            System.out.println("Error: " + e.getMessage());
-//        }
-//        return "asdf";
-//    }
+         SpotifyApi spotifyApi = new SpotifyApi.Builder()
+                .setAccessToken(accessToken)
+                .build();
+        SearchTracksRequest searchTracksRequest = spotifyApi.searchTracks(searchQuery).build();
+        Song song=new Song();
+        try {
+            // Execute the search request
+            Track[] tracks = searchTracksRequest.execute().getItems();
+            song.setName(tracks[0].getName());
+            song.setArtistName(tracks[0].getArtists()[0].getName());
+            song.setKey(tracks[0].getId());
+            song.setAlbumName(tracks[0].getAlbum().getName());
+            song.setUrl(tracks[0].getUri());
+        } catch (ParseException | IOException | SpotifyWebApiException e) {
+            System.out.println("Error: " + e.getMessage());
+        }
+        return song;
+    }
 }
