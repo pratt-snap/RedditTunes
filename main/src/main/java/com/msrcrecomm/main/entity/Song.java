@@ -6,7 +6,6 @@ import jakarta.persistence.*;
 @Table(name = "song")
 public class Song {
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "song_id")
     private String id;
 
@@ -21,6 +20,10 @@ public class Song {
 
     @Column(name="album_name")
     private String albumName;
+
+    @ManyToOne
+    @JoinColumn(name = "subreddit_id")
+    private Subreddit subreddit;
 
     public String getKey() {
         return id;
@@ -60,5 +63,21 @@ public class Song {
 
     public void setAlbumName(String albumName) {
         this.albumName = albumName;
+    }
+
+    public String getId() {
+        return id;
+    }
+
+    public void setId(String id) {
+        this.id = id;
+    }
+
+    public Subreddit getSubreddit() {
+        return subreddit;
+    }
+
+    public void setSubreddit(Subreddit subreddit) {
+        this.subreddit = subreddit;
     }
 }
