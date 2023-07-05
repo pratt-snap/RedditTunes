@@ -1,9 +1,8 @@
 package com.msrcrecomm.main.entity;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
+
+import java.util.List;
 
 @Entity
 @Table(name = "subreddits")
@@ -17,6 +16,17 @@ public class Subreddit {
 
     @Column(name="subreddit_name")
     private String name;
+
+    @OneToMany(mappedBy = "subreddit", cascade = CascadeType.ALL)
+    private List<Song> songs;
+
+    public List<Song> getSongs() {
+        return songs;
+    }
+
+    public void setSongs(List<Song> songs) {
+        this.songs = songs;
+    }
 
     public String getId() {
         return id;

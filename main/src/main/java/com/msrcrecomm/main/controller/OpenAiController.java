@@ -21,27 +21,10 @@ public class OpenAiController {
     @Autowired
     private OpenAICallsService openAICallsService;
 
-    @Value("${spotify.credentials.filepath}")
-    private String spotifyCredentialsFilePath;
-
     @GetMapping(value="/testCall")
     public String simpleOpenAiCall() {
        return openAICallsService.getSongs();
     }
-
-    @GetMapping(value = "/callback")
-    public ResponseEntity<String> handleCallback(@RequestParam("code") String authorizationCode) {
-        String accessToken=openAICallsService.getAccessToken(authorizationCode).getAccessToken();
-        try(BufferedWriter writer = new BufferedWriter(new FileWriter(spotifyCredentialsFilePath))) {
-            writer.write(authorizationCode);
-            writer.write("\n");
-            writer.write(accessToken);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-        return ResponseEntity.ok("Authorization code: " + authorizationCode);
-    }
-
 
 
     private JSONObject getKeywords(String subRedditDescription){
