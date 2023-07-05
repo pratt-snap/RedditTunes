@@ -4,6 +4,7 @@ import com.msrcrecomm.main.entity.Song;
 import org.apache.hc.core5.http.ParseException;
 import org.json.JSONArray;
 import org.json.JSONObject;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
@@ -15,6 +16,8 @@ import se.michaelthelin.spotify.model_objects.specification.Track;
 import se.michaelthelin.spotify.requests.authorization.authorization_code.AuthorizationCodeRequest;
 import se.michaelthelin.spotify.requests.data.search.simplified.SearchTracksRequest;
 
+import java.io.BufferedReader;
+import java.io.FileReader;
 import java.io.IOException;
 import java.net.URI;
 import java.util.ArrayList;
@@ -25,16 +28,35 @@ import java.util.List;
 @Service
 public class OpenAICallsService {
 
-    public void show(){
-        System.out.println("injection success");
-    }
+    private static String SPOTIFY_CLIENT_ID="0a66b96585504078872c6227c7563373";
 
-    private void getSubredditsForUser(){
+    private static String SPOTIFY_CLIENT_SECRETE="4ed907ccb2d842ab938e995eaeac3566";
 
-    }
+    private static String SPOTIFY_AUTH_CODE="";
 
-    private void getSongsForSubreddit(){
+    private static String SPOTIFY_ACCESS_TOKEN="";
 
+    @Value("${spotify.credentials.filepath}")
+    private String spotifyCredentialsFilePath;
+
+    private void SetAccessTokenAndCode(){
+        try (BufferedReader br = new BufferedReader(new FileReader(spotifyCredentialsFilePath))) {
+            String line;
+            int lineNumber = 0;
+            while ((line = br.readLine()) != null && lineNumber < 2) {
+                if (lineNumber == 0) {
+                    SPOTIFY_AUTH_CODE = line;
+                } else if (lineNumber == 1) {
+                    SPOTIFY_ACCESS_TOKEN = line;
+                }
+                lineNumber++;
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        System.out.println("access_code: " + SPOTIFY_AUTH_CODE);
+        System.out.println("access_token: " + SPOTIFY_ACCESS_TOKEN);
     }
 
     public String getDescriptionFromSubreddit(){
@@ -89,8 +111,8 @@ public class OpenAICallsService {
         Integer n=5;
         n=languageNotEnglish?10:5;
         String systemPrompt="You are a music recommendation system who returns just" + n + "song and corresponding artist name as response for people of described traits without courtesy message. example of response \n" +
-                "Song Name 1 - name of artist \n" +
-                "Song Name 2 - name of artist \n";
+                "Song - name of artist \n" +
+                "Song - name of artist \n";
         messages.add(createMessage("system", systemPrompt));
         messages.add(createMessage("user", userPrompt));
 
@@ -116,7 +138,7 @@ public class OpenAICallsService {
             JSONObject message = firstChoice.getJSONObject("message");
             content = message.getString("content");
             songs=CreateSongsArray(content);
-            System.out.println("Response content: " + content);
+            System.out.println("Response content: " + songs);
         } else {
             System.out.println("No choices found in the response.");
         }
@@ -127,6 +149,7 @@ public class OpenAICallsService {
         List<Song> songs=new ArrayList<>();
         String[] arr= content.split("\n");
         StringBuilder str=new StringBuilder();
+        SetAccessTokenAndCode();
         for(String line:arr){
             Song song=SearchSong(line);
             songs.add(song);
@@ -146,11 +169,6 @@ public class OpenAICallsService {
         return false;
     }
 
-    private JSONObject getKeywords(String subRedditDescription){
-        JSONObject jsonObject = new JSONObject();
-
-        return jsonObject;
-    }
 
     private String processContent(String content) {
         String[] arr= content.split("\n");
@@ -173,14 +191,11 @@ public class OpenAICallsService {
         return jsonObject;
     }
 
-    public SpotifyApi getAccessToken(String kode){
-        String clientId = "0a66b96585504078872c6227c7563373";
-        String clientSecret = "4ed907ccb2d842ab938e995eaeac3566";
+    public SpotifyApi getAccessToken(String code){
         URI redirectUri = SpotifyHttpManager.makeUri("http://localhost:8080/callback");
-        String code=kode;
         SpotifyApi spotifyApi = new SpotifyApi.Builder()
-                .setClientId(clientId)
-                .setClientSecret(clientSecret)
+                .setClientId(SPOTIFY_CLIENT_ID)
+                .setClientSecret(SPOTIFY_CLIENT_SECRETE)
                 .setRedirectUri(redirectUri)
                 .build();
         AuthorizationCodeRequest authorizationCodeRequest = spotifyApi.authorizationCode(code)
@@ -201,12 +216,8 @@ public class OpenAICallsService {
         }
 
     public Song SearchSong(String searchQuery) {
-        String clientId = "0a66b96585504078872c6227c7563373";
-        String clientSecret = "4ed907ccb2d842ab938e995eaeac3566";
-        String accessToken="BQDb5T34KQyc3Jw1bP05Zgnp46u0BADAOyer9x_fBPvZsaUjZa4YueolKBLOfXiSvf3Ab5Nrka8WgSV1-wOjbJfelJXPTvaDHhx-oVftQmVo52IxlQzAZxr1GYQ5jLN9XwMUFC40HfKp2pIjJIFSDza5mbLRm5KrBvBPrFoo2rVzeotr0DVD_dFHxP6_aMA6UVO75tqPaQ";
-
          SpotifyApi spotifyApi = new SpotifyApi.Builder()
-                .setAccessToken(accessToken)
+                .setAccessToken(SPOTIFY_ACCESS_TOKEN)
                 .build();
         SearchTracksRequest searchTracksRequest = spotifyApi.searchTracks(searchQuery).build();
         Song song=new Song();
