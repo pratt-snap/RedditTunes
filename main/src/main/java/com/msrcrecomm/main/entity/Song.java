@@ -21,10 +21,6 @@ public class Song {
     @Column(name="album_name")
     private String albumName;
 
-    @ManyToOne
-    @JoinColumn(name = "subreddit_id")
-    private Subreddit subreddit;
-
     public String getKey() {
         return id;
     }
@@ -71,13 +67,5 @@ public class Song {
 
     public void setId(String id) {
         this.id = id;
-    }
-
-    public Subreddit getSubreddit() {
-        return subreddit;
-    }
-
-    public void setSubreddit(Subreddit subreddit) {
-        this.subreddit = subreddit;
     }
 }

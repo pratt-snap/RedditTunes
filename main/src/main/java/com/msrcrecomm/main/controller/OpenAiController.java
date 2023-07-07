@@ -22,8 +22,8 @@ public class OpenAiController {
     private OpenAICallsService openAICallsService;
 
     @GetMapping(value="/testCall")
-    public String simpleOpenAiCall() {
-       return openAICallsService.getSongs();
+    public void simpleOpenAiCall() {
+       openAICallsService.runBatchJob();
     }
 
 

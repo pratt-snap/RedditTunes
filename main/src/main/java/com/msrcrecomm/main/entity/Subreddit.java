@@ -17,17 +17,6 @@ public class Subreddit {
     @Column(name="subreddit_name")
     private String name;
 
-    @OneToMany(mappedBy = "subreddit", cascade = CascadeType.ALL)
-    private List<Song> songs;
-
-    public List<Song> getSongs() {
-        return songs;
-    }
-
-    public void setSongs(List<Song> songs) {
-        this.songs = songs;
-    }
-
     public String getId() {
         return id;
     }

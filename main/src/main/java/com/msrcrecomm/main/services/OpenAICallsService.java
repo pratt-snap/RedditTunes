@@ -1,15 +1,23 @@
 package com.msrcrecomm.main.services;
 
 import com.msrcrecomm.main.entity.Song;
+import com.msrcrecomm.main.entity.SongsSubreddit;
+import com.msrcrecomm.main.entity.Subreddit;
+import com.msrcrecomm.main.repository.SongsSubredditRepository;
+import com.msrcrecomm.main.repository.SubredditRepository;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
-import java.util.ArrayList;
-import java.util.List;
 
+import java.io.*;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 
 @Service
@@ -17,6 +25,63 @@ public class OpenAICallsService {
 
     @Autowired
     private SpotifyCallsService spotifyCallsService;
+
+    @Autowired
+    private SongsSubredditRepository songsSubredditRepository;
+
+    @Autowired
+    private SubredditRepository subredditRepository;
+
+    @Value("${processed.subreddit.ids}")
+    private String processedIds;
+
+
+    public void runBatchJob() {
+        //fetch subreddit from database
+        List<Subreddit> subRedditList=subredditRepository.findAll();
+        Set<String> processedIdSet = readProcessedIdsFromFile();
+        for(Subreddit subreddit:subRedditList){
+            if(processedIdSet.contains(subreddit.getId())) continue;
+            List<Song> savedSongs=getSongs();
+            saveSubSongs(subreddit,savedSongs);
+            processedIdSet.add(subreddit.getId());
+            writeProcessedIdToFile(subreddit.getId());
+        }
+    }
+
+    private Set<String> readProcessedIdsFromFile() {
+        Set<String> processedIdSet = new HashSet<>();
+
+        try (BufferedReader reader = new BufferedReader(new FileReader(processedIds))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                processedIdSet.add(line.trim());
+            }
+        } catch (IOException e) {
+            // Handle any exceptions
+            e.printStackTrace();
+        }
+
+        return processedIdSet;
+    }
+
+    private void writeProcessedIdToFile(String processedId) {
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter(processedIds, true))) {
+                writer.write(processedId);
+                writer.newLine();
+        } catch (IOException e) {
+            // Handle any exceptions
+            e.printStackTrace();
+        }
+    }
+    private void saveSubSongs(Subreddit subreddit, List<Song> savedSongs) {
+        for(Song song: savedSongs){
+            SongsSubreddit songsSubreddit=new SongsSubreddit();
+            songsSubreddit.setSong(song);
+            songsSubreddit.setSubreddit(subreddit);
+            songsSubredditRepository.save(songsSubreddit);
+        }
+    }
 
     public String getDescriptionFromSubreddit(){
         RestTemplate restTemplate = new RestTemplate();
@@ -59,7 +124,7 @@ public class OpenAICallsService {
         return result;
     }
 
-    public String getSongs(){
+    public List<Song> getSongs(){
         RestTemplate restTemplate = new RestTemplate();
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
@@ -69,9 +134,7 @@ public class OpenAICallsService {
         Boolean languageNotEnglish=checkLanguage(userPrompt);
         Integer n=5;
         n=languageNotEnglish?10:5;
-        String systemPrompt="You are a music recommendation system who returns just" + n + "song and corresponding artist name as response for people of described traits without courtesy message. example of response \n" +
-                "Song - name of artist \n" +
-                "Song - name of artist \n";
+        String systemPrompt="You are a music recommendation system who returns just" + n + "song and corresponding artist name each on new line as response for people of described traits without courtesy message.";
         messages.add(createMessage("system", systemPrompt));
         messages.add(createMessage("user", userPrompt));
 
@@ -97,11 +160,15 @@ public class OpenAICallsService {
             JSONObject message = firstChoice.getJSONObject("message");
             content = message.getString("content");
             songs=spotifyCallsService.CreateSongsArray(content);
-            System.out.println("Response content: " + songs);
+            //save subreddit entity
+
+            //save songs and subreddit entity
+
+
         } else {
             System.out.println("No choices found in the response.");
         }
-        return content;
+        return songs;
     }
 
 
@@ -138,6 +205,7 @@ public class OpenAICallsService {
         jsonObject.put("content",content);
         return jsonObject;
     }
+
 
 
 }

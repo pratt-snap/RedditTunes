@@ -68,12 +68,12 @@ public class SpotifyCallsService {
             Song song=SearchSong(line);
             songs.add(song);
         }
-        saveSongs(songs);
+        songs=saveSongs(songs);
         return songs;
     }
 
     @Transactional
-    public void saveSongs(List<Song> songs) {
+    public List<Song> saveSongs(List<Song> songs) {
         List<Song> newSongs = new ArrayList<>();
 
         for (Song song : songs) {
@@ -83,9 +83,11 @@ public class SpotifyCallsService {
             }
         }
 
+        List<Song> Savedlist=new ArrayList<>();
         if (!newSongs.isEmpty()) {
-            songRepository.saveAll(newSongs);
+            Savedlist=songRepository.saveAll(newSongs);
         }
+        return Savedlist;
     }
 
     public SpotifyApi getAccessToken(String code){
@@ -125,7 +127,7 @@ public class SpotifyCallsService {
             song.setArtistName(tracks[0].getArtists()[0].getName());
             song.setKey(tracks[0].getId());
             song.setAlbumName(tracks[0].getAlbum().getName());
-            song.setUrl(tracks[0].getUri());
+            song.setUrl(tracks[0].getExternalUrls().get("spotify"));
         } catch (ParseException | IOException | SpotifyWebApiException e) {
             System.out.println("Error: " + e.getMessage());
         }
