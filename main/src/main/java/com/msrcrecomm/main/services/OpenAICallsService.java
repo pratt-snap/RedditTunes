@@ -1,6 +1,5 @@
 package com.msrcrecomm.main.services;
 
-import com.msrcrecomm.main.entity.Song;
 import com.msrcrecomm.main.entity.SongsSubreddit;
 import com.msrcrecomm.main.entity.SongsSubredditId;
 import com.msrcrecomm.main.entity.Subreddit;
@@ -45,7 +44,7 @@ public class OpenAICallsService {
         for(Subreddit subreddit:subRedditList){
             if(processedIdSet.contains(subreddit.getId())) continue;
             System.out.println("Processing for subreddit name "+ subreddit.getName());
-            List<String> savedSongsIds=getSongs();
+            List<String> savedSongsIds=getSongs(subreddit);
             saveSubSongs(subreddit,savedSongsIds);
             processedIdSet.add(subreddit.getId());
             writeProcessedIdToFile(subreddit.getId());
@@ -92,20 +91,21 @@ public class OpenAICallsService {
         }
     }
 
-    public String getDescriptionFromSubreddit(){
+    public String getDescriptionFromSubreddit(Subreddit subreddit){
         RestTemplate restTemplate = new RestTemplate();
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
         headers.set("Authorization", "Bearer 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");
         List<JSONObject> messages = new ArrayList<>();
-        String systemPrompt="I am giving description of reddit communities. Return in format,language it is in, country name, emotion and target audience. \n" +
+        String systemPrompt="I am giving name and description of reddit community. Return in format,language it is in, country name, emotion, target audience . \n" +
                 "All attributes in one or two words at max. Example of resonse format \n" +
                 "language: Language name\n" +
                 "country: Country name or N/A\n" +
                 "emotion: emotion name\n" +
                 "target_audience: possible target audience";
         // will have to get it from database eventually
-        String userPrompt="“I Think You Should Leave” on Netflix";
+        StringBuilder userPromptBuilder=new StringBuilder("Subreddit Name: "+subreddit.getName()+" description "+ subreddit.getDescription());
+        String userPrompt=userPromptBuilder.toString();
         messages.add(createMessage("system", systemPrompt));
         messages.add(createMessage("user", userPrompt));
         String requestBody = "{\"messages\": " + messages.toString() + ", \"max_tokens\": 300, \"model\": \"gpt-3.5-turbo\"}";
@@ -133,7 +133,7 @@ public class OpenAICallsService {
         return result;
     }
 
-    public List<String> getSongs(){
+    public List<String> getSongs(Subreddit subreddit){
         List<String> songs = new ArrayList<>();
         try {
             RestTemplate restTemplate = new RestTemplate();
@@ -141,7 +141,7 @@ public class OpenAICallsService {
             headers.setContentType(MediaType.APPLICATION_JSON);
             headers.set("Authorization", "Bearer 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");
             List<JSONObject> messages = new ArrayList<>();
-            String userPrompt = getDescriptionFromSubreddit();
+            String userPrompt = getDescriptionFromSubreddit(subreddit);
             System.out.println(userPrompt);
             Boolean languageNotEnglish = checkLanguage(userPrompt);
             Integer n = 5;
