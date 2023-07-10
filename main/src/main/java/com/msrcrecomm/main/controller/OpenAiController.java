@@ -21,7 +21,7 @@ public class OpenAiController {
     @Autowired
     private OpenAICallsService openAICallsService;
 
-    @GetMapping(value="/testCall")
+    @GetMapping(value="/batchJob")
     public void simpleOpenAiCall() {
        openAICallsService.runBatchJob();
     }

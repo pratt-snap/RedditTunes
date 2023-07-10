@@ -54,40 +54,48 @@ public class SpotifyCallsService {
         } catch (IOException e) {
             e.printStackTrace();
         }
-
-        System.out.println("access_code: " + SPOTIFY_AUTH_CODE);
-        System.out.println("access_token: " + SPOTIFY_ACCESS_TOKEN);
     }
 
-    public List<Song> CreateSongsArray(String content) {
+    public List<String> CreateSongsArray(String content) {
         List<Song> songs=new ArrayList<>();
         String[] arr= content.split("\n");
         StringBuilder str=new StringBuilder();
         SetAccessTokenAndCode();
         for(String line:arr){
             Song song=SearchSong(line);
+            System.out.println(song.getName());
             songs.add(song);
         }
-        songs=saveSongs(songs);
-        return songs;
+        List<String> songIds=saveSongs(songs);
+        return songIds;
     }
 
     @Transactional
-    public List<Song> saveSongs(List<Song> songs) {
+    public List<String> saveSongs(List<Song> songs) {
         List<Song> newSongs = new ArrayList<>();
-
-        for (Song song : songs) {
-            // Check if the song already exists in the database
-            if (!songRepository.existsById(song.getKey())) {
-                newSongs.add(song);
+        List<String> songsReturnIds = new ArrayList<>();
+        List<Song> Savedlist=new ArrayList<>();
+        try {
+            for (Song song : songs) {
+                // Check if the song already exists in the database
+                if (!songRepository.existsById(song.getKey())) {
+                    newSongs.add(song);
+                }
+                else{
+                    songsReturnIds.add(song.getId());
+                }
+            }
+            if (!newSongs.isEmpty()) {
+                Savedlist=songRepository.saveAll(newSongs);
             }
         }
-
-        List<Song> Savedlist=new ArrayList<>();
-        if (!newSongs.isEmpty()) {
-            Savedlist=songRepository.saveAll(newSongs);
+        catch (Exception e){
+            System.out.println(e.getMessage());
         }
-        return Savedlist;
+        for(Song song:Savedlist){
+            songsReturnIds.add(song.getId());
+        }
+        return songsReturnIds;
     }
 
     public SpotifyApi getAccessToken(String code){

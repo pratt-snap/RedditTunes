@@ -3,19 +3,40 @@ package com.msrcrecomm.main.entity;
 
 import jakarta.persistence.*;
 
+
 @Entity
 @Table(name = "songs_subreddit")
 public class SongsSubreddit {
-    @Id
-    @ManyToOne
-    @JoinColumn(name = "subreddit_id")
+
+    @EmbeddedId
+    private SongsSubredditId id;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "subreddit_id", referencedColumnName = "subreddit_id", insertable = false, updatable = false)
     private Subreddit subreddit;
 
-    @Id
-    @ManyToOne
-    @JoinColumn(name = "song_id")
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "song_id", referencedColumnName = "song_id", insertable = false, updatable = false)
     private Song song;
 
+    // Constructors, Getters, and Setters
+
+    public SongsSubreddit() {
+    }
+
+    public SongsSubreddit(SongsSubredditId id, Subreddit subreddit, Song song) {
+        this.id = id;
+        this.subreddit = subreddit;
+        this.song = song;
+    }
+
+    public SongsSubredditId getId() {
+        return id;
+    }
+
+    public void setId(SongsSubredditId id) {
+        this.id = id;
+    }
 
     public Subreddit getSubreddit() {
         return subreddit;
@@ -32,5 +53,5 @@ public class SongsSubreddit {
     public void setSong(Song song) {
         this.song = song;
     }
-
 }
+

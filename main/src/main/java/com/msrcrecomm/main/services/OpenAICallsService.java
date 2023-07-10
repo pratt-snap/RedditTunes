@@ -2,6 +2,7 @@ package com.msrcrecomm.main.services;
 
 import com.msrcrecomm.main.entity.Song;
 import com.msrcrecomm.main.entity.SongsSubreddit;
+import com.msrcrecomm.main.entity.SongsSubredditId;
 import com.msrcrecomm.main.entity.Subreddit;
 import com.msrcrecomm.main.repository.SongsSubredditRepository;
 import com.msrcrecomm.main.repository.SubredditRepository;
@@ -11,6 +12,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
 
 import java.io.*;
@@ -42,10 +44,17 @@ public class OpenAICallsService {
         Set<String> processedIdSet = readProcessedIdsFromFile();
         for(Subreddit subreddit:subRedditList){
             if(processedIdSet.contains(subreddit.getId())) continue;
-            List<Song> savedSongs=getSongs();
-            saveSubSongs(subreddit,savedSongs);
+            System.out.println("Processing for subreddit name "+ subreddit.getName());
+            List<String> savedSongsIds=getSongs();
+            saveSubSongs(subreddit,savedSongsIds);
             processedIdSet.add(subreddit.getId());
             writeProcessedIdToFile(subreddit.getId());
+            try {
+                Thread.sleep(60000); // Sleep for 60 seconds
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                // Handle interruption, if needed
+            }
         }
     }
 
@@ -74,11 +83,11 @@ public class OpenAICallsService {
             e.printStackTrace();
         }
     }
-    private void saveSubSongs(Subreddit subreddit, List<Song> savedSongs) {
-        for(Song song: savedSongs){
+    private void saveSubSongs(Subreddit subreddit, List<String> savedSongIds) {
+        for(String Id: savedSongIds){
+            SongsSubredditId songsSubredditId=new SongsSubredditId(subreddit.getId(),Id);
             SongsSubreddit songsSubreddit=new SongsSubreddit();
-            songsSubreddit.setSong(song);
-            songsSubreddit.setSubreddit(subreddit);
+            songsSubreddit.setId(songsSubredditId);
             songsSubredditRepository.save(songsSubreddit);
         }
     }
@@ -91,10 +100,10 @@ public class OpenAICallsService {
         List<JSONObject> messages = new ArrayList<>();
         String systemPrompt="I am giving description of reddit communities. Return in format,language it is in, country name, emotion and target audience. \n" +
                 "All attributes in one or two words at max. Example of resonse format \n" +
-                "language: English\n" +
-                "country: N/A\n" +
-                "emotion: Humor\n" +
-                "target_audience: Anime/Manga fans";
+                "language: Language name\n" +
+                "country: Country name or N/A\n" +
+                "emotion: emotion name\n" +
+                "target_audience: possible target audience";
         // will have to get it from database eventually
         String userPrompt="“I Think You Should Leave” on Netflix";
         messages.add(createMessage("system", systemPrompt));
@@ -124,49 +133,51 @@ public class OpenAICallsService {
         return result;
     }
 
-    public List<Song> getSongs(){
-        RestTemplate restTemplate = new RestTemplate();
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_JSON);
-        headers.set("Authorization", "Bearer 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");
-        List<JSONObject> messages = new ArrayList<>();
-        String userPrompt=getDescriptionFromSubreddit();
-        Boolean languageNotEnglish=checkLanguage(userPrompt);
-        Integer n=5;
-        n=languageNotEnglish?10:5;
-        String systemPrompt="You are a music recommendation system who returns just" + n + "song and corresponding artist name each on new line as response for people of described traits without courtesy message.";
-        messages.add(createMessage("system", systemPrompt));
-        messages.add(createMessage("user", userPrompt));
+    public List<String> getSongs(){
+        List<String> songs = new ArrayList<>();
+        try {
+            RestTemplate restTemplate = new RestTemplate();
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_JSON);
+            headers.set("Authorization", "Bearer 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");
+            List<JSONObject> messages = new ArrayList<>();
+            String userPrompt = getDescriptionFromSubreddit();
+            System.out.println(userPrompt);
+            Boolean languageNotEnglish = checkLanguage(userPrompt);
+            Integer n = 5;
+            n = languageNotEnglish ? 10 : 5;
+            String systemPrompt = "You are a music recommendation system who returns just" + n + "song and corresponding artist name each on new line as response for people of described traits without courtesy message.";
+            messages.add(createMessage("system", systemPrompt));
+            messages.add(createMessage("user", userPrompt));
+            String requestBody = "{\"messages\": " + messages.toString() + ", \"max_tokens\": 300, \"model\": \"gpt-3.5-turbo\"}";
+            //String requestBody = "{\"prompt\": \"Hello, world!\", \"max_tokens\": 5, \"model\": \"gpt-3.5-turbo\"}";
+            HttpEntity<String> requestEntity = new HttpEntity<>(requestBody, headers);
 
+            String url = "https://api.openai.com/v1/chat/completions";
 
-        String requestBody = "{\"messages\": " + messages.toString() + ", \"max_tokens\": 300, \"model\": \"gpt-3.5-turbo\"}";
-        //String requestBody = "{\"prompt\": \"Hello, world!\", \"max_tokens\": 5, \"model\": \"gpt-3.5-turbo\"}";
-        HttpEntity<String> requestEntity = new HttpEntity<>(requestBody, headers);
+            ResponseEntity<String> responseEntity = restTemplate.exchange(url, HttpMethod.POST, requestEntity, String.class);
 
-        String url = "https://api.openai.com/v1/chat/completions";
+            int statusCode = responseEntity.getStatusCodeValue();
+            String responseBody = responseEntity.getBody();
+            JSONObject responseJson = new JSONObject(responseBody);
 
-        ResponseEntity<String> responseEntity = restTemplate.exchange(url, HttpMethod.POST, requestEntity, String.class);
+            System.out.println("Response status code: " + statusCode);
+            JSONArray choicesArray = responseJson.getJSONArray("choices");
+            String content = "";
 
-        int statusCode = responseEntity.getStatusCodeValue();
-        String responseBody = responseEntity.getBody();
-        JSONObject responseJson = new JSONObject(responseBody);
-
-        System.out.println("Response status code: " + statusCode);
-        JSONArray choicesArray = responseJson.getJSONArray("choices");
-        String content="";
-        List<Song> songs=new ArrayList<>();
-        if (choicesArray.length() > 0) {
-            JSONObject firstChoice = choicesArray.getJSONObject(0);
-            JSONObject message = firstChoice.getJSONObject("message");
-            content = message.getString("content");
-            songs=spotifyCallsService.CreateSongsArray(content);
-            //save subreddit entity
-
-            //save songs and subreddit entity
-
-
-        } else {
-            System.out.println("No choices found in the response.");
+            if (choicesArray.length() > 0) {
+                JSONObject firstChoice = choicesArray.getJSONObject(0);
+                JSONObject message = firstChoice.getJSONObject("message");
+                content = message.getString("content");
+                songs = spotifyCallsService.CreateSongsArray(content);
+            } else {
+                System.out.println("No choices found in the response.");
+            }
+        }
+        catch (HttpClientErrorException e) {
+            System.out.println("HTTP error occurred: " + e.getMessage());
+        } catch (Exception e) {
+            System.out.println("Error occurred: " + e.getMessage());
         }
         return songs;
     }
@@ -195,7 +206,6 @@ public class OpenAICallsService {
                 str.append("\n");
             }
         }
-        System.out.println(str);
         return str.toString();
     }
 
