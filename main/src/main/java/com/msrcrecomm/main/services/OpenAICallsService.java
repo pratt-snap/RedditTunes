@@ -43,11 +43,11 @@ public class OpenAICallsService {
         Set<String> processedIdSet = readProcessedIdsFromFile();
         for(Subreddit subreddit:subRedditList){
             if(processedIdSet.contains(subreddit.getId())) continue;
+            processedIdSet.add(subreddit.getId());
+            writeProcessedIdToFile(subreddit.getId());
             System.out.println("Processing for subreddit name "+ subreddit.getName());
             List<String> savedSongsIds=getSongs(subreddit);
             saveSubSongs(subreddit,savedSongsIds);
-            processedIdSet.add(subreddit.getId());
-            writeProcessedIdToFile(subreddit.getId());
             try {
                 Thread.sleep(60000); // Sleep for 60 seconds
             } catch (InterruptedException e) {
@@ -97,9 +97,8 @@ public class OpenAICallsService {
         headers.setContentType(MediaType.APPLICATION_JSON);
         headers.set("Authorization", "Bearer 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");
         List<JSONObject> messages = new ArrayList<>();
-        String systemPrompt="I am giving name and description of reddit community. Return in format,language it is in, country name, emotion, target audience . \n" +
+        String systemPrompt="I am giving name and description of reddit community. Return in format, country name, emotion, target audience . \n" +
                 "All attributes in one or two words at max. Example of resonse format \n" +
-                "language: Language name\n" +
                 "country: Country name or N/A\n" +
                 "emotion: emotion name\n" +
                 "target_audience: possible target audience";

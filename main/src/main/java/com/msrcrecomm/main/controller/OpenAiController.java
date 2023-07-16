@@ -22,27 +22,8 @@ public class OpenAiController {
     private OpenAICallsService openAICallsService;
 
     @GetMapping(value="/batchJob")
-    public void simpleOpenAiCall() {
+    public void runExtractSongsJob() {
        openAICallsService.runBatchJob();
     }
 
-
-    private JSONObject getKeywords(String subRedditDescription){
-        JSONObject jsonObject = new JSONObject();
-
-        return jsonObject;
-    }
-
-    private String[] processContent(String content) {
-        String[] arr= content.split("\n");
-        System.out.println(arr[4]);
-        return arr;
-    }
-
-    private static JSONObject createMessage(String role, String content) {
-        JSONObject jsonObject = new JSONObject();
-        jsonObject.put("role",role);
-        jsonObject.put("content",content);
-        return jsonObject;
-    }
 }

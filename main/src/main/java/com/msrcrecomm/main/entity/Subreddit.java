@@ -17,6 +17,8 @@ public class Subreddit {
     @Column(name="subreddit_name")
     private String name;
 
+
+
     public String getId() {
         return id;
     }
