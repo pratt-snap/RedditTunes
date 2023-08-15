@@ -6,6 +6,8 @@ public class SongsDTO {
     private String albumName;
     private String url;
 
+    private String id;
+
     public SongsDTO(String title, String artistName, String albumName, String url) {
         this.title = title;
         this.artistName = artistName;
@@ -14,6 +16,14 @@ public class SongsDTO {
     }
 
     public SongsDTO() {
+    }
+
+    public String getId() {
+        return id;
+    }
+
+    public void setId(String id) {
+        this.id = id;
     }
 
     public String getTitle() {

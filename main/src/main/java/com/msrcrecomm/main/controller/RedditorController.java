@@ -1,24 +1,21 @@
 package com.msrcrecomm.main.controller;
 
+import com.msrcrecomm.main.dto.SongsDTO;
+import com.msrcrecomm.main.entity.Song;
+import com.msrcrecomm.main.services.OpenAICallsService;
 import com.msrcrecomm.main.services.RedditCallsService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 public class RedditorController {
-
-    private RedditCallsService redditCallsService;
     @Autowired
-    public RedditorController(RedditCallsService redditCallsService){
-        this.redditCallsService=redditCallsService;
-    }
+    private RedditCallsService redditCallsService;
 
-    @GetMapping(value="/redditor")
-    public void runRedditorJob(@RequestParam("userId") String userId){
-        //Integrate Python Script
-        redditCallsService.processRedditor(userId);
+    @PostMapping(value="/redditor")
+    public List<SongsDTO> runRedditorJob(@RequestParam("userId") String userId){
+       return redditCallsService.processRedditor(userId);
     }
-
 }

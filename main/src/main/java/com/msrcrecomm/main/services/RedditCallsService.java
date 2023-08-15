@@ -1,57 +1,95 @@
 package com.msrcrecomm.main.services;
 
+import com.msrcrecomm.main.dto.SongsDTO;
+import com.msrcrecomm.main.entity.Song;
+import com.msrcrecomm.main.entity.SongsRedditor;
 import com.msrcrecomm.main.entity.Subreddit;
+import com.msrcrecomm.main.repository.SongRepository;
+import com.msrcrecomm.main.repository.SongsRedditorRepository;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 @Service
 public class RedditCallsService {
 
-    public void processRedditor(String userId) {
-        List<Subreddit> subreddits = new ArrayList<>();
-        List<String> command = new ArrayList<>();
-        command.add("python");
-        command.add("src/main/resources/scripts/ui.py");
-        command.add(userId);
+    @Autowired
+    private OpenAICallsService openAICallsService;
 
-        try {
-            // Start the process and execute the Python script
-            ProcessBuilder processBuilder = new ProcessBuilder(command);
-            Process process = processBuilder.start();
+    @Autowired
+    private SongsRedditorService songsRedditorService;
 
-            // Read the output from the Python script
-            BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
-            String line;
-            while ((line = reader.readLine()) != null) {
-                // Assuming the Python script outputs the subreddit information in a specific format
-                if(line.contains("subreddit id -"))
-                {
-                    String[] subredditData = line.split("-");
-                    if (subredditData.length == 2) {
-                        String subredditId = subredditData[1];
-                        Subreddit subreddit = new Subreddit();
-                        subreddit.setId(subredditId);
-                        subreddits.add(subreddit);
-                    }
+    @Autowired
+    private SongsRedditorRepository songsRedditorRepository;
+
+    @Autowired
+    private SongRepository songRepository;
+
+    private static final ExecutorService executorService = Executors.newSingleThreadExecutor();
+
+    public void shutdownExecutorService() {
+        executorService.shutdown();
+    }
+
+
+    public List<SongsDTO> processRedditor(String userId) {
+        List<Song> userSongs=new ArrayList<>();
+        Boolean isUserProcessed=songsRedditorService.isRedditorProcessed(userId);
+        if(isUserProcessed){
+            List<SongsRedditor> songUserEntries=songsRedditorRepository.findByRedditorId(userId);
+            for(SongsRedditor entry:songUserEntries){
+                Song song=songRepository.getReferenceById(entry.getSong().getId());
+                userSongs.add(song);
+            }
+        }
+        else{
+            executorService.submit(() -> openAICallsService.runBatchJob(userId));
+            //start polling until isUserProcessed is true
+            while (true) {
+                isUserProcessed = songsRedditorService.isRedditorProcessed(userId);
+                if (isUserProcessed) {
+                    System.out.println("User Processed, breaking from poll");
+                    break;
+                }
+                try {
+                    System.out.println("polling");
+                    Thread.sleep(30000); // Wait for 10 seconds before next check
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
                 }
             }
-
-            // Wait for the process to finish and get the exit code
-            int exitCode = process.waitFor();
-
-            // Handle any errors that occurred during execution
-            if (exitCode != 0) {
-                // You can log an error message or handle it as needed
-                System.err.println("An error occurred while executing the Python script. Exit code: " + exitCode);
+            Sort sortBySongId = Sort.by(Sort.Order.asc("id.songId"));
+            //get songs in sorted order
+            List<SongsRedditor> songUserEntries = songsRedditorRepository.findByRedditorId(userId, sortBySongId);
+            for(SongsRedditor entry:songUserEntries){
+                Song song=songRepository.getReferenceById(entry.getSong().getId());
+                userSongs.add(song);
             }
-        } catch (IOException | InterruptedException e) {
-            // Handle exceptions that occurred during execution
-            e.printStackTrace();
+
+            //return response
+        }
+        List<SongsDTO> responseList=new ArrayList<>();
+        entityToDTO(userSongs,responseList);
+        return responseList;
+    }
+    private void entityToDTO(List<Song> songsForUser, List<SongsDTO> responseList) {
+        for(Song song:songsForUser){
+            SongsDTO songdto=new SongsDTO();
+            songdto.setTitle(song.getName());
+            songdto.setAlbumName(song.getAlbumName());
+            songdto.setArtistName(song.getArtistName());
+            songdto.setUrl(song.getUrl());
+            responseList.add(songdto);
         }
     }
 }
