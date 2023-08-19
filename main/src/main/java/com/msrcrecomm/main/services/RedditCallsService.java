@@ -6,6 +6,8 @@ import com.msrcrecomm.main.entity.SongsRedditor;
 import com.msrcrecomm.main.entity.Subreddit;
 import com.msrcrecomm.main.repository.SongRepository;
 import com.msrcrecomm.main.repository.SongsRedditorRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
@@ -13,10 +15,7 @@ import org.springframework.stereotype.Service;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -35,11 +34,7 @@ public class RedditCallsService {
     @Autowired
     private SongRepository songRepository;
 
-    private static final ExecutorService executorService = Executors.newSingleThreadExecutor();
-
-    public void shutdownExecutorService() {
-        executorService.shutdown();
-    }
+    private static final Logger logger = LoggerFactory.getLogger(RedditCallsService.class);
 
 
     public List<SongsDTO> processRedditor(String userId) {
@@ -53,17 +48,17 @@ public class RedditCallsService {
             }
         }
         else{
-            executorService.submit(() -> openAICallsService.runBatchJob(userId));
+            openAICallsService.runBatchJob(userId);
             //start polling until isUserProcessed is true
             while (true) {
-                isUserProcessed = songsRedditorService.isRedditorProcessed(userId);
-                if (isUserProcessed) {
-                    System.out.println("User Processed, breaking from poll");
+                Long numberOfSongsProcessed = songsRedditorService.numberSongsProcessed(userId);
+                if (numberOfSongsProcessed>=10) {
+                    logger.info("User Processed, breaking from poll. Number of songs processed for user {}", numberOfSongsProcessed);
                     break;
                 }
                 try {
                     System.out.println("polling");
-                    Thread.sleep(30000); // Wait for 10 seconds before next check
+                    Thread.sleep(60000); // Wait for 60 seconds before next check
                 } catch (InterruptedException e) {
                     Thread.currentThread().interrupt();
                 }
@@ -72,11 +67,13 @@ public class RedditCallsService {
             //get songs in sorted order
             List<SongsRedditor> songUserEntries = songsRedditorRepository.findByRedditorId(userId, sortBySongId);
             for(SongsRedditor entry:songUserEntries){
-                Song song=songRepository.getReferenceById(entry.getSong().getId());
+                Optional<Song> optsong=songRepository.findById(entry.getSong().getId());
+                Song song=optsong.get();
                 userSongs.add(song);
+                if(userSongs.size()>=10){
+                    break; // 10 songs will be fetched first time
+                }
             }
-
-            //return response
         }
         List<SongsDTO> responseList=new ArrayList<>();
         entityToDTO(userSongs,responseList);

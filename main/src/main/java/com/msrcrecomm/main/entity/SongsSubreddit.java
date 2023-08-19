@@ -30,6 +30,10 @@ public class SongsSubreddit {
         this.song = song;
     }
 
+    public SongsSubreddit(SongsSubredditId songsSubredditId) {
+        this.id=songsSubredditId;
+    }
+
     public SongsSubredditId getId() {
         return id;
     }
