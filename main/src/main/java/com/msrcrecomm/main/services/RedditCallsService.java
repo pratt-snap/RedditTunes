@@ -34,6 +34,9 @@ public class RedditCallsService {
     @Autowired
     private SongRepository songRepository;
 
+    @Autowired
+    private KafkaProducerService kafkaProducerService;
+
     private static final Logger logger = LoggerFactory.getLogger(RedditCallsService.class);
 
 
@@ -49,8 +52,10 @@ public class RedditCallsService {
         }
         else{
             openAICallsService.runBatchJob(userId);
+
             //start polling until isUserProcessed is true
             while (true) {
+//                kafkaProducerService.sendBatchJobRequest(userId);
                 Long numberOfSongsProcessed = songsRedditorService.numberSongsProcessed(userId);
                 if (numberOfSongsProcessed>=10) {
                     logger.info("User Processed, breaking from poll. Number of songs processed for user {}", numberOfSongsProcessed);

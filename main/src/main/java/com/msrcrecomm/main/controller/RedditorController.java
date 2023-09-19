@@ -1,8 +1,6 @@
 package com.msrcrecomm.main.controller;
 
 import com.msrcrecomm.main.dto.SongsDTO;
-import com.msrcrecomm.main.entity.Song;
-import com.msrcrecomm.main.services.OpenAICallsService;
 import com.msrcrecomm.main.services.RedditCallsService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
