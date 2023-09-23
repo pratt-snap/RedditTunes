@@ -17,16 +17,5 @@ public class Redditor {
 
     }
 
-    public Redditor(String user_id) {
-        this.id = user_id;
-    }
-
-    public String getUserId() {
-        return id;
-    }
-
-    public void setUserId(String userId) {
-        this.id = userId;
-    }
 }
 
