@@ -51,11 +51,9 @@ public class RedditCallsService {
             }
         }
         else{
-            openAICallsService.runBatchJob(userId);
-
-            //start polling until isUserProcessed is true
+            kafkaProducerService.sendBatchJobRequest(userId);
+            logger.info("message sent for user {}", userId);
             while (true) {
-//                kafkaProducerService.sendBatchJobRequest(userId);
                 Long numberOfSongsProcessed = songsRedditorService.numberSongsProcessed(userId);
                 if (numberOfSongsProcessed>=10) {
                     logger.info("User Processed, breaking from poll. Number of songs processed for user {}", numberOfSongsProcessed);
@@ -76,7 +74,7 @@ public class RedditCallsService {
                 Song song=optsong.get();
                 userSongs.add(song);
                 if(userSongs.size()>=10){
-                    break; // 10 songs will be fetched first time
+                    break;
                 }
             }
         }

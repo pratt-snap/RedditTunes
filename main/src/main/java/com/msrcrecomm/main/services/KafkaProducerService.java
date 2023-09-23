@@ -12,6 +12,6 @@ public class KafkaProducerService {
     }
 
     public void sendBatchJobRequest(String userId) {
-        kafkaTemplate.send("user_processing", userId);
+        kafkaTemplate.send("user_processing", userId, userId);
     }
 }
