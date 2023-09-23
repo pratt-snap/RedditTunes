@@ -1,0 +1,25 @@
+<div>
+    <table mat-table [dataSource]="songs" class="mat-elevation-z8">
+        <ng-container matColumnDef="title">
+            <th mat-header-cell *matHeaderCellDef>Title</th>
+            <td mat-cell *matCellDef="let song">{{ song.title }}</td>
+        </ng-container>
+        <ng-container matColumnDef="albumName">
+            <th mat-header-cell *matHeaderCellDef>Album</th>
+            <td mat-cell *matCellDef="let song">{{ song.albumName }}</td>
+        </ng-container>
+        <ng-container matColumnDef="artistName">
+            <th mat-header-cell *matHeaderCellDef>Artist</th>
+            <td mat-cell *matCellDef="let song">{{ song.artistName }}</td>
+        </ng-container>
+        <ng-container matColumnDef="url">
+            <th mat-header-cell *matHeaderCellDef>URL</th>
+            <td mat-cell *matCellDef="let song">
+                <a [href]="song.url" target="_blank">{{ song.url }}</a>
+            </td>
+        </ng-container>
+
+        <tr mat-header-row *matHeaderRowDef="['title', 'albumName', 'artistName', 'url']"></tr>
+        <tr mat-row *matRowDef="let row; columns: ['title', 'albumName', 'artistName', 'url'];"></tr>
+    </table>
+</div>

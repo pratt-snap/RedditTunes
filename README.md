@@ -14,6 +14,6 @@ Music Recommendation Application for Redditors.
 
 - Main : Springboot project to process incoming requests of user
 - processor : Springboot project as kafka consumer to process songs for user
-- ui : Angular UI for application
+- app-ui : Angular UI for application
 
 

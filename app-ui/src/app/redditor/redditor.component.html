@@ -1,0 +1,34 @@
+<!-- <div class="redditor-container">
+    <form (ngSubmit)="submitRedditorName()" class="redditor-form">
+      <label for="redditorName">Redditor's Name:</label>
+      <input type="text" id="redditorName" [(ngModel)]="redditorName" name="redditorName" required>
+      <button type="submit" class="submit-button">Submit</button>
+    </form>
+</div> -->
+<!-- <div class="redditor-container mat-elevation-z2">
+  <form (ngSubmit)="submitRedditorName()" class="redditor-form">
+      <mat-form-field class="redditor-input">
+          <mat-label>Redditor's Name:</mat-label>
+          <input matInput type="text" [(ngModel)]="redditorName" name="redditorName" required>
+      </mat-form-field>
+      <button mat-raised-button type="submit" class="submit-button">Submit</button>
+  </form>
+</div> -->
+<div *ngIf="loading" class="loading-container">
+    <mat-progress-spinner
+    mode="indeterminate"
+    color="primary"
+    [diameter]="200">
+  </mat-progress-spinner>
+</div>
+<div *ngIf="!loading" class="redditor-container mat-elevation-z2">
+  <form (ngSubmit)="submitRedditorName()" class="redditor-form">
+      <mat-form-field class="redditor-input">
+          <mat-label>Redditor ID:</mat-label>
+          <input matInput type="text" [(ngModel)]="redditorId" name="redditorId" required>
+      </mat-form-field>
+      <button mat-raised-button type="submit" color="primary">Submit</button>
+  </form>
+</div>
+  
+  
