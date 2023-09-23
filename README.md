@@ -1,4 +1,4 @@
-# RedditorMusicRecommendation
+# RedditTunes
 
 ## Introduction
 Music Recommendation Application for Redditors. 
