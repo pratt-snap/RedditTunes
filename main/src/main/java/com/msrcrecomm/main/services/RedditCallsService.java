@@ -3,7 +3,6 @@ package com.msrcrecomm.main.services;
 import com.msrcrecomm.main.dto.SongsDTO;
 import com.msrcrecomm.main.entity.Song;
 import com.msrcrecomm.main.entity.SongsRedditor;
-import com.msrcrecomm.main.entity.Subreddit;
 import com.msrcrecomm.main.repository.SongRepository;
 import com.msrcrecomm.main.repository.SongsRedditorRepository;
 import org.slf4j.Logger;
@@ -12,18 +11,12 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
 import java.util.*;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+
 
 @Service
 public class RedditCallsService {
 
-    @Autowired
-    private OpenAICallsService openAICallsService;
 
     @Autowired
     private SongsRedditorService songsRedditorService;
