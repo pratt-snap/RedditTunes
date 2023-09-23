@@ -10,5 +10,10 @@ Music Recommendation Application for Redditors.
 - Kafka
 - OpenAI
 
+## Project Structure
+
+- Main : Springboot project to process incoming requests of user
+- processor : Springboot project as kafka consumer to process songs for user
+- ui : UI for application in UI
 
 
