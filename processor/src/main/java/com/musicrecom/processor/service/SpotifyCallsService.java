@@ -156,7 +156,6 @@ public class SpotifyCallsService {
         try {
             final AuthorizationCodeCredentials authorizationCodeCredentials = authorizationCodeRequest.execute();
 
-            // Set access and refresh token for further "spotifyApi" object usage
             spotifyApi.setAccessToken(authorizationCodeCredentials.getAccessToken());
             spotifyApi.setRefreshToken(authorizationCodeCredentials.getRefreshToken());
 
@@ -176,7 +175,6 @@ public class SpotifyCallsService {
                     .build();
             SearchTracksRequest searchTracksRequest = spotifyApi.searchTracks(searchQuery).build();
             try {
-                // Execute the search request
                 Track[] tracks = searchTracksRequest.execute().getItems();
                 song.setTitle(tracks[0].getName());
                 song.setArtistName(tracks[0].getArtists()[0].getName());

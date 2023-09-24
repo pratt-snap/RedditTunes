@@ -6,5 +6,4 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public interface SongRepository extends JpaRepository<Song, String> {
-    // Additional custom query methods can be defined here if needed
 }

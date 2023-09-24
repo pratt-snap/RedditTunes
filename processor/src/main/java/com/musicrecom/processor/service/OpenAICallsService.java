@@ -103,7 +103,7 @@ public class OpenAICallsService {
         command.add(userId);
 
         try {
-            // Start the process and execute the Python script
+
             ProcessBuilder processBuilder = new ProcessBuilder(command);
             processBuilder.redirectErrorStream(true);
             Process process = processBuilder.start();
@@ -113,7 +113,6 @@ public class OpenAICallsService {
             String line;
             while ((line = reader.readLine()) != null) {
                 logger.info("line- {}", line);
-                // Assuming the Python script outputs the subreddit information in a specific format
                 if(line.contains("subreddit id -"))
                 {
                     String[] subredditData = line.split("-");
@@ -125,17 +124,13 @@ public class OpenAICallsService {
                     }
                 }
             }
-
-            // Wait for the process to finish and get the exit code
             int exitCode = process.waitFor();
 
-            // Handle any errors that occurred during execution
+
             if (exitCode != 0) {
-                // You can log an error message or handle it as needed
                 System.err.println("An error occurred while executing the Python script. Exit code: " + exitCode);
             }
         } catch (IOException | InterruptedException e) {
-            // Handle exceptions that occurred during execution
             e.printStackTrace();
         }
         return subreddits;
@@ -185,7 +180,6 @@ public class OpenAICallsService {
                 "country: Country name or N/A\n" +
                 "emotion: emotion name\n" +
                 "target_audience: possible target audience";
-        // will have to get it from database eventually
         StringBuilder userPromptBuilder=new StringBuilder("Subreddit Name: "+subreddit.getName()+" description "+ subreddit.getDescription());
         String userPrompt=userPromptBuilder.toString();
         messages.add(createMessage("system", systemPrompt));
@@ -232,7 +226,6 @@ public class OpenAICallsService {
             messages.add(createMessage("system", systemPrompt));
             messages.add(createMessage("user", userPrompt));
             String requestBody = "{\"messages\": " + messages.toString() + ", \"max_tokens\": 300, \"model\": \"gpt-3.5-turbo\"}";
-            //String requestBody = "{\"prompt\": \"Hello, world!\", \"max_tokens\": 5, \"model\": \"gpt-3.5-turbo\"}";
             HttpEntity<String> requestEntity = new HttpEntity<>(requestBody, headers);
 
             String url = "https://api.openai.com/v1/chat/completions";
